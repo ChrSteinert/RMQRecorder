@@ -1,0 +1,20 @@
+STORAGE: NONE
+RESTRICTION: == net8.0
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Argu (6.1.4)
+      FSharp.Core (>= 4.3.2)
+      System.Configuration.ConfigurationManager (>= 4.4)
+    FSharp.Core (8.0.100)
+    FsProfiler (0.3.2)
+      FSharp.Core (>= 8.0.100)
+    RabbitMQ.Client (6.8.1)
+      System.Memory (>= 4.5.5)
+      System.Threading.Channels (>= 7.0)
+    System.Configuration.ConfigurationManager (8.0)
+      System.Diagnostics.EventLog (>= 8.0)
+      System.Security.Cryptography.ProtectedData (>= 8.0)
+    System.Diagnostics.EventLog (8.0)
+    System.Memory (4.5.5)
+    System.Security.Cryptography.ProtectedData (8.0)
+    System.Threading.Channels (8.0)
