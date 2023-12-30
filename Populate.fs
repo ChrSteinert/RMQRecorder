@@ -24,7 +24,7 @@ let populate (args : ParseResults<PopulateArguments>) (channel : IModel) (cancel
       for i in [1..count] do
         if i % 500 = 0 then 
           if confirm then channel.WaitForConfirmsOrDie ()
-          printfn "Published %i messages" i
+          printfn "Published %i messages (%i%%)" i (i * 100 / count)
         channel.BasicPublish(exchange, queue, channel.CreateBasicProperties(), ReadOnlyMemory.Empty)
     }
     |> fun c -> Async.RunSynchronously(c, -1, cancellationToken)

@@ -30,7 +30,9 @@ let main _ =
     cts.Cancel ()
   )
 
-  if args.Contains Record then Consume.consume (args.GetResult Record) channel cts.Token
+  if args.Contains Record then 
+    args.PostProcessResult(Record, RecordArguments.Validate)
+    Record.record (args.GetResult Record) channel cts.Token
   elif args.Contains Populate then Populate.populate (args.GetResult Populate) channel cts.Token
   elif args.Contains Play then 
     args.PostProcessResult(Play, PlayArguments.Validate)

@@ -17,15 +17,20 @@ type PlayArguments =
   static member Validate (args : ParseResults<PlayArguments>) =
     if args.Contains File |> not then failwith "A File is required!"
 
-type ConsumeArguments = 
+type RecordArguments = 
+  | [<MainCommand>] File of string
   | [<AltCommandLine("-q")>] Queue of string
   | NoAck
 
   interface IArgParserTemplate with
     member this.Usage = 
       match this with
+      | File _ -> "The file to write the recording to."
       | Queue _ -> "The queue to read messages from."
       | NoAck -> "Do not Ack messages – they will stay in the queue after being recorded."
+
+  static member Validate (args : ParseResults<RecordArguments>) =
+    if args.Contains File |> not then failwith "A File is required!"
 
 type PopulateArguments = 
   | [<AltCommandLine("-c")>] Count of int 
@@ -49,7 +54,7 @@ type CliArguments =
   | UserName of string
   | Password of string
   | [<CliPrefix(CliPrefix.None)>] Populate of ParseResults<PopulateArguments>
-  | [<CliPrefix(CliPrefix.None)>] Record of ParseResults<ConsumeArguments>
+  | [<CliPrefix(CliPrefix.None)>] Record of ParseResults<RecordArguments>
   | [<CliPrefix(CliPrefix.None)>] Play of ParseResults<PlayArguments>
 
   interface IArgParserTemplate with

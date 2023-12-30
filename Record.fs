@@ -1,7 +1,8 @@
-module Consume
+module Record
 
 open System
 open System.Collections.Concurrent
+open System.IO
 open System.Xml.Serialization
 
 open Argu
@@ -11,15 +12,18 @@ open CliArguments
 open Types
 
 
-let consume (args : ParseResults<ConsumeArguments>) (channel : IModel) (cancellationToken : System.Threading.CancellationToken) =
+let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellationToken : System.Threading.CancellationToken) =
+  let path = args.GetResult File
   let queue = args.GetResult Queue
   let ack = args.Contains NoAck |> not
 
   let serializer = new XmlSerializer(typeof<RmqMessage>)
+  use file = new FileStream(path, FileMode.Create, FileAccess.Write)
+  use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Compress)
   use writer = 
     let s = Xml.XmlWriterSettings()
     s.Indent <- true
-    let w = Xml.XmlWriter.Create(Console.Out, s)
+    let w = Xml.XmlWriter.Create(deflate, s)
     w
   writer.WriteStartDocument ()
   writer.WriteStartElement "Messages"
@@ -38,7 +42,7 @@ let consume (args : ParseResults<ConsumeArguments>) (channel : IModel) (cancella
               {
                 ContentEncoding = ""
                 CorrelationId = ""
-                DeliveryMode = 0uy
+                DeliveryMode = 1uy
                 Expiration = ""
                 MessageId = ""
                 Priority = 0uy

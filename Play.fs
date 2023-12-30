@@ -15,20 +15,21 @@ open Types
 
 let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationToken : CancellationToken) =
 
-  let path = args.GetResult File
+  let path = args.GetResult PlayArguments.File
   let queueOverride = args.TryGetResult PlayArguments.RoutingKey
   let exchangeOverride = args.TryGetResult PlayArguments.Exchange
 
   use messages = new BlockingCollection<RmqMessage>(1000)
   
   use file = new FileStream(path, FileMode.Open, FileAccess.Read)
+  use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Decompress)
   let serializer = new XmlSerializer(typeof<RmqMessage>)
 
   channel.ConfirmSelect  ()
 
   let reader = 
     async {
-      let reader = XmlReader.Create(file)
+      let reader = XmlReader.Create(deflate)
       while reader.Read () && cancellationToken.IsCancellationRequested |> not do
         if reader.LocalName = "RmqMessage" then
           let r = reader.ReadSubtree ()
