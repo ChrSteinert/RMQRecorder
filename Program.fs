@@ -27,6 +27,8 @@ let main _ =
 
   Console.CancelKeyPress.Add (fun c ->
     c.Cancel <- true
+    printfn ""
+    printfn "Aborting"
     cts.Cancel ()
   )
 

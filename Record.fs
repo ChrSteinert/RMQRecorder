@@ -17,6 +17,8 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
   let queue = args.GetResult Queue
   let ack = args.Contains NoAck |> not
 
+  let mutable msgsWritten = 0
+
   let serializer = new XmlSerializer(typeof<RmqMessage>)
   use file = new FileStream(path, FileMode.Create, FileAccess.Write)
   use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Compress)
@@ -24,9 +26,10 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     let s = Xml.XmlWriterSettings()
     s.Indent <- true
     let w = Xml.XmlWriter.Create(deflate, s)
+    w.WriteStartDocument ()
+    w.WriteStartElement "Messages"
     w
-  writer.WriteStartDocument ()
-  writer.WriteStartElement "Messages"
+
   use messages = new BlockingCollection<RmqMessage>(1000)
 
   let messageCreator = 
@@ -75,6 +78,9 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     async  {
       for msg in messages.GetConsumingEnumerable () do
         serializer.Serialize(writer, msg)
+        System.Threading.Interlocked.Increment(&msgsWritten) |> ignore
     }
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+  printfn "%i messages written to file" msgsWritten
