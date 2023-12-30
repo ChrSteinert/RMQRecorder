@@ -18,6 +18,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
   let ack = args.Contains NoAck |> not
 
   let mutable msgsWritten = 0
+  let mutable msgsRemaining = 0u
 
   let serializer = new XmlSerializer(typeof<RmqMessage>)
   use file = new FileStream(path, FileMode.Create, FileAccess.Write)
@@ -38,6 +39,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
         let msg = channel.BasicGet(queue, ack)
         if msg |> isNull || cancellationToken.IsCancellationRequested then messages.CompleteAdding ()
         else
+          msgsRemaining <- msg.MessageCount
           let body = msg.Body.ToArray ()
           let props = 
             let p = msg.BasicProperties
@@ -75,12 +77,16 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     }
 
   let serializer =
+    printf "Finished 000%%"
     async  {
       for msg in messages.GetConsumingEnumerable () do
         serializer.Serialize(writer, msg)
         System.Threading.Interlocked.Increment(&msgsWritten) |> ignore
+        if msgsWritten % 500 = 0 then
+          printf "\b\b\b\b\b\b\b\b\b\b\b\b\bFinished %s%%" ((msgsWritten * 100 / (msgsWritten + int msgsRemaining)).ToString("000"))
     }
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
 
+  printfn ""
   printfn "%i messages written to file" msgsWritten
