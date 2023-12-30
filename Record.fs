@@ -57,7 +57,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
               {
                 ContentEncoding = p.ContentEncoding
                 CorrelationId = p.CorrelationId
-                DeliveryMode = p.DeliveryMode
+                DeliveryMode = max p.DeliveryMode 1uy // RMQ tends to report DeliveryMode = 0, which is invalid
                 Expiration = p.Expiration
                 MessageId = p.MessageId
                 Priority = p.Priority
