@@ -28,14 +28,17 @@ let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationTo
   channel.ConfirmSelect  ()
 
   let reader = 
+    printf "Playing: 000%%"
     async {
       let reader = XmlReader.Create(deflate)
       while reader.Read () && cancellationToken.IsCancellationRequested |> not do
         if reader.LocalName = "RmqMessage" then
           let r = reader.ReadSubtree ()
           serializer.Deserialize(r) :?> RmqMessage |> messages.Add
+          printf "\b\b\b\b\b\b\b\b\b\b\b\b\bPlaying: %s%%" ((file.Position * 100L / file.Length).ToString("000"))
 
       messages.CompleteAdding ()
+      printfn ""
     }
 
   let publisher = 

@@ -77,13 +77,13 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     }
 
   let serializer =
-    printf "Finished 000%%"
+    printf "Recording: 000%%"
     async  {
       for msg in messages.GetConsumingEnumerable () do
         serializer.Serialize(writer, msg)
         System.Threading.Interlocked.Increment(&msgsWritten) |> ignore
         if msgsWritten % 500 = 0 then
-          printf "\b\b\b\b\b\b\b\b\b\b\b\b\bFinished %s%%" ((msgsWritten * 100 / (msgsWritten + int msgsRemaining)).ToString("000"))
+          printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bRecording: %s%%" ((msgsWritten * 100 / (msgsWritten + int msgsRemaining)).ToString("000"))
     }
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
