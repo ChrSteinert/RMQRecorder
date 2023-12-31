@@ -65,7 +65,7 @@ let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationTo
         channel.BasicPublish(exchange, rKey, props, msg.Body |> ReadOnlyMemory<byte>)
       )
       ProgressBar.printProgressBar 100
-      printfn "Waiting for final publisher confirmations…"
+      eprintfn "Waiting for final publisher confirmations…"
       channel.WaitForConfirmsOrDie ()
     }
 

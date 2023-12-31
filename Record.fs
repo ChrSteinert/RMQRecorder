@@ -88,5 +88,5 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
 
-  printfn ""
-  printfn "%i messages written to file" msgsWritten
+  eprintfn ""
+  eprintfn "%i messages written to file" msgsWritten

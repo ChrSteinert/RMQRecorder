@@ -1,18 +1,18 @@
 module ProgressBar
 
 let private printProgressBar' (percent : int) (width : int) =
-  '\b' |> Array.replicate width |> System.String |> printf "%s"
+  '\b' |> Array.replicate width |> System.String |> eprintf "%s"
   let width = width - 7
   (if percent < 10 then
-    printf "  %i%% |"
+    eprintf "  %i%% |"
   elif percent < 100 then
-    printf " %i%% |"
-  else printf "%i%% |") percent
+    eprintf " %i%% |"
+  else eprintf "%i%% |") percent
   for _ in [1..percent * width / 100] do
-    printf "="
+    eprintf "="
   for _ in [1..(width - percent * width / 100)] do
-    printf " "
+    eprintf " "
 
-  (if percent = 100 then printfn else printf) "|"
+  (if percent = 100 then eprintfn else printf) "|"
 
 let printProgressBar percent = printProgressBar' percent (System.Console.BufferWidth)
