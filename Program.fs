@@ -20,23 +20,23 @@ let main _ =
     f.Password <- args.GetResult(Password, "guest")
     f
 
-  let c = f.CreateConnection () 
+  let c = f.CreateConnection ()
   let channel = c.CreateModel ()
 
   use cts = new CancellationTokenSource ()
 
   Console.CancelKeyPress.Add (fun c ->
     c.Cancel <- true
-    printfn ""
-    printfn "Aborting"
+    eprintfn ""
+    eprintfn "Aborting"
     cts.Cancel ()
   )
 
-  if args.Contains Record then 
+  if args.Contains Record then
     args.PostProcessResult(Record, RecordArguments.Validate)
     Record.record (args.GetResult Record) channel cts.Token
   elif args.Contains Populate then Populate.populate (args.GetResult Populate) channel cts.Token
-  elif args.Contains Play then 
+  elif args.Contains Play then
     args.PostProcessResult(Play, PlayArguments.Validate)
     Play.play (args.GetResult Play) channel cts.Token
   else failwith "No known command!"

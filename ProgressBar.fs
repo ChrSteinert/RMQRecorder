@@ -13,6 +13,6 @@ let private printProgressBar' (percent : int) (width : int) =
   for _ in [1..(width - percent * width / 100)] do
     eprintf " "
 
-  (if percent = 100 then eprintfn else printf) "|"
+  (if percent = 100 then eprintfn else eprintf) "|"
 
 let printProgressBar percent = printProgressBar' percent (System.Console.BufferWidth)

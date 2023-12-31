@@ -15,22 +15,32 @@ open Types
 
 let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationToken : CancellationToken) =
 
-  let path = args.GetResult PlayArguments.File
+  let path = args.TryGetResult PlayArguments.File
   let queueOverride = args.TryGetResult PlayArguments.RoutingKey
   let exchangeOverride = args.TryGetResult PlayArguments.Exchange
 
   use messages = new BlockingCollection<RmqMessage>(1000)
 
-  use file = new FileStream(path, FileMode.Open, FileAccess.Read)
-  use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Decompress)
   let serializer = new XmlSerializer(typeof<RmqMessage>)
+
+  let file =
+    match path with
+    | Some path -> new FileStream(path, FileMode.Open, FileAccess.Read) |> Some
+    | None -> None
+
+  use reader =
+    match file with
+    | Some file ->
+      let stream = new Compression.BrotliStream(file, Compression.CompressionMode.Decompress)
+      XmlReader.Create stream
+    | None ->
+      eprintfn "No progress can be shown for stdin input"
+      XmlReader.Create Console.In
 
   channel.ConfirmSelect  ()
 
   let reader =
-    ProgressBar.printProgressBar 0
     async {
-      let reader = XmlReader.Create(deflate)
       while reader.Read () && cancellationToken.IsCancellationRequested |> not do
         if reader.LocalName = "RmqMessage" then
           let r = reader.ReadSubtree ()
@@ -44,8 +54,13 @@ let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationTo
       messages.GetConsumingEnumerable () |> Seq.iteri (fun i msg ->
         if i % 500 = 0 then
           channel.WaitForConfirmsOrDie ()
-          let percent = int (file.Position * 100L / file.Length) |> min 99 // Cap at 99% to not freak out the Progressbar printing.
-          ProgressBar.printProgressBar percent
+          match file with
+          | Some file ->
+            let percent = int (file.Position * 100L / file.Length) |> min 99 // Cap at 99% to not freak out the Progressbar printing.
+            ProgressBar.printProgressBar percent
+          | None -> // Can't print a progress bar, when we do not know, how far into the stream we are.
+            '\b' |> Array.replicate 100 |> String |> eprintf "%s"
+            eprintf "Published %i messages" i
         let props =
           let p = channel.CreateBasicProperties ()
           p.ContentEncoding <- msg.BasicProperties.ContentEncoding
@@ -64,9 +79,13 @@ let play (args : ParseResults<PlayArguments>) (channel : IModel) (cancellationTo
 
         channel.BasicPublish(exchange, rKey, props, msg.Body |> ReadOnlyMemory<byte>)
       )
-      ProgressBar.printProgressBar 100
+      if file.IsSome then ProgressBar.printProgressBar 100 else eprintfn ""
       eprintfn "Waiting for final publisher confirmations…"
       channel.WaitForConfirmsOrDie ()
     }
 
   [ reader; publisher ] |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+  match file with
+  | Some file -> file.Dispose ()
+  | None -> ()

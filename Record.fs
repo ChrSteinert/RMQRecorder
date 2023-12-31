@@ -13,7 +13,7 @@ open Types
 
 
 let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellationToken : System.Threading.CancellationToken) =
-  let path = args.GetResult File
+  let path = args.TryGetResult File
   let queue = args.GetResult Queue
   let ack = args.Contains NoAck |> not
 
@@ -21,15 +21,28 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
   let mutable msgsRemaining = 0u
 
   let serializer = new XmlSerializer(typeof<RmqMessage>)
-  use file = new FileStream(path, FileMode.Create, FileAccess.Write)
-  use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Compress)
-  use writer =
-    let s = Xml.XmlWriterSettings()
-    s.Indent <- true
-    let w = Xml.XmlWriter.Create(deflate, s)
-    w.WriteStartDocument ()
-    w.WriteStartElement "Messages"
-    w
+  let file, deflate, writer =
+    match path with
+    | Some path ->
+      let f = new FileStream(path, FileMode.Create, FileAccess.Write)
+      let deflate = new Compression.BrotliStream(f, Compression.CompressionMode.Compress)
+      let writer =
+        let s = Xml.XmlWriterSettings()
+        s.Indent <- false
+        let w = Xml.XmlWriter.Create(deflate, s)
+        w.WriteStartDocument ()
+        w.WriteStartElement "Messages"
+        w
+      Some f, Some deflate, writer
+    | None ->
+      let writer =
+        let s = Xml.XmlWriterSettings()
+        s.Indent <- true
+        let w = Xml.XmlWriter.Create(Console.Out, s)
+        w.WriteStartDocument ()
+        w.WriteStartElement "Messages"
+        w
+      None, None, writer
 
   use messages = new BlockingCollection<RmqMessage>(1000)
 
@@ -87,6 +100,13 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     }
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
+
+  writer.Dispose ()
+  match file, deflate with
+  | Some file, Some deflate ->
+    file.Dispose ()
+    deflate.Dispose ()
+  | _ -> ()
 
   eprintfn ""
   eprintfn "%i messages written to file" msgsWritten

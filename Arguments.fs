@@ -3,37 +3,37 @@ module CliArguments
 open Argu
 
 type PlayArguments =
-  | [<MainCommand; Mandatory>] File of string
+  | [<AltCommandLine("-f")>] File of string
   | [<AltCommandLine("-q")>] RoutingKey of string
   | [<AltCommandLine("-x")>] Exchange of string
 
   interface IArgParserTemplate with
     member this.Usage =
       match this with
-      | File _ -> "The file containing an RMQRecorder recording."
+      | File _ -> "The file containing an RMQRecorder recording. If no file is given, uncompressed input is expected at stdin."
       | Exchange _ -> "Override the Exchange for all messages. If not provided, the original Exchange of each message will be used."
       | RoutingKey _ -> "Override the Routing Key for all messages. If not provided, the original Routing Key of each message will be used."
 
   static member Validate (args : ParseResults<PlayArguments>) =
-    if args.Contains File |> not then failwith "A File is required!"
+    ()
 
-type RecordArguments = 
-  | [<MainCommand>] File of string
+type RecordArguments =
+  | [<AltCommandLine("-f")>] File of string
   | [<AltCommandLine("-q")>] Queue of string
   | NoAck
 
   interface IArgParserTemplate with
-    member this.Usage = 
+    member this.Usage =
       match this with
-      | File _ -> "The file to write the recording to."
+      | File _ -> "The file to write the recording to. If no file is given, uncompressed output will be given to stdout."
       | Queue _ -> "The queue to read messages from."
       | NoAck -> "Do not Ack messages – they will stay in the queue after being recorded."
 
   static member Validate (args : ParseResults<RecordArguments>) =
-    if args.Contains File |> not then failwith "A File is required!"
+    ()
 
-type PopulateArguments = 
-  | [<AltCommandLine("-c")>] Count of int 
+type PopulateArguments =
+  | [<AltCommandLine("-c")>] Count of int
   | [<AltCommandLine("-x")>] Exchange of string
   | [<AltCommandLine("-q"); Mandatory>] RoutingKey of string
   | NoConfirm
@@ -58,7 +58,7 @@ type CliArguments =
   | [<CliPrefix(CliPrefix.None)>] Play of ParseResults<PlayArguments>
 
   interface IArgParserTemplate with
-    member this.Usage = 
+    member this.Usage =
       match this with
       | Populate _ -> "Populates empty messages to RMQ."
       | Record _ -> "Consume"
