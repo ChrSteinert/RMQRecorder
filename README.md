@@ -9,7 +9,7 @@ It is intended to make testing of RMQ-using applications easier.
 Like when there is a chain of components, taking messages from RabbitMQ, doing some calculation and handing the result off to a different queue for another component to process.
 When testing solutions like this it is sometimes useful to be able to skip components in the chain, or be able to share testing messages with the team.
 RMQ Recorder can be used for this.
-It is inspired by (cassette)[https://github.com/uber/cassette].
+It is inspired by [cassette](https://github.com/uber/cassette).
 
 ## General
 
