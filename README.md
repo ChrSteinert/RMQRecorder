@@ -1,6 +1,6 @@
 # RMQ Recorder
 
-… a utility to record messages from a RabbitMQ Queues, save them to a file, and replay them 
+… a utility to record messages from a RabbitMQ Queues, save them to a file, and replay them
 - later
 - to a different exchange, routing key, cluster, etc.
 - more than once.
@@ -27,16 +27,18 @@ OPTIONS:
 
 To produce a "recording" of messages currently in a queue, use `record`:
 ```sh
-./RMQRecorder record --queue thequeue myfile.rmqr
+./RMQRecorder record --queue thequeue -f myfile.rmqr
 ```
-You can add `--noack` (before the file) to not acknoledge received messages, so that the recorded queue will not be empty after the record.
+You can add `--noack` to not acknoledge received messages, so that the recorded queue will not be empty after the record.
+If no file is specified, (uncompressed) output will be written to stdout.
 
 ### Play
 
 To publish messages from a file use `play`:
 ```sh
-./RMQRecorder play myfile.rmqr
+./RMQRecorder play -f myfile.rmqr
 ```
 
 This will publish the stored messages to the exachange and routing key they were originally published to.
 Exchange and routing key can be overriden with the `-x` and `-q` arguments.
+If no file is specified, input will be taken from stdin.
