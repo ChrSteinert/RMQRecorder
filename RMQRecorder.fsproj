@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Arguments.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="ProgressBar.fs" />
     <Compile Include="Populate.fs" />
     <Compile Include="Record.fs" />
     <Compile Include="Play.fs" />

@@ -23,7 +23,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
   let serializer = new XmlSerializer(typeof<RmqMessage>)
   use file = new FileStream(path, FileMode.Create, FileAccess.Write)
   use deflate = new Compression.BrotliStream(file, Compression.CompressionMode.Compress)
-  use writer = 
+  use writer =
     let s = Xml.XmlWriterSettings()
     s.Indent <- true
     let w = Xml.XmlWriter.Create(deflate, s)
@@ -33,7 +33,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
 
   use messages = new BlockingCollection<RmqMessage>(1000)
 
-  let messageCreator = 
+  let messageCreator =
     async {
       while messages.IsAddingCompleted |> not do
         let msg = channel.BasicGet(queue, ack)
@@ -41,9 +41,9 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
         else
           msgsRemaining <- msg.MessageCount
           let body = msg.Body.ToArray ()
-          let props = 
+          let props =
             let p = msg.BasicProperties
-            if p  |> isNull then 
+            if p  |> isNull then
               {
                 ContentEncoding = ""
                 CorrelationId = ""
@@ -55,7 +55,7 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
                 Type = ""
                 UserId = ""
               }
-            else 
+            else
               {
                 ContentEncoding = p.ContentEncoding
                 CorrelationId = p.CorrelationId
@@ -77,13 +77,13 @@ let record (args : ParseResults<RecordArguments>) (channel : IModel) (cancellati
     }
 
   let serializer =
-    printf "Recording: 000%%"
+    ProgressBar.printProgressBar 0
     async  {
       for msg in messages.GetConsumingEnumerable () do
         serializer.Serialize(writer, msg)
         System.Threading.Interlocked.Increment(&msgsWritten) |> ignore
         if msgsWritten % 500 = 0 then
-          printf "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bRecording: %s%%" ((msgsWritten * 100 / (msgsWritten + int msgsRemaining)).ToString("000"))
+          ProgressBar.printProgressBar (msgsWritten * 100 / (msgsWritten + int msgsRemaining))
     }
 
   [ messageCreator; serializer ] |> Async.Parallel |> Async.RunSynchronously |> ignore
